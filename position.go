@@ -1,4 +1,4 @@
-package robchess
+package main
 
 import (
 	"math/rand"
@@ -73,4 +73,20 @@ func (p *Position) Reset() {
 			}
 		}
 	}
+}
+
+func (p *Position) String() string {
+	boardPrint := ""
+
+	boardPrint += "––––––––––––––––-----------------\n"
+	for r := len(p.board) - 1; r >= 0; r-- {
+		for f := range p.board[r] {
+			gamePiece := p.board[r][f].piece
+			boardPrint += "| " + gamePiece.String() + " "
+			if f == 7 {
+				boardPrint += "|\n––––––––––––––––-----------------\n"
+			}
+		}
+	}
+	return boardPrint
 }

@@ -1,4 +1,6 @@
-package robchess
+package main
+
+import "github.com/fatih/color"
 
 // Piece represents a type of chess piece.
 type Piece int
@@ -27,4 +29,29 @@ const (
 type GamePiece struct {
 	piece Piece
 	color Side
+}
+
+func (p *GamePiece) String() string {
+	var pieceStr string
+	switch p.piece {
+	case Pawn:
+		pieceStr = "P"
+	case Rook:
+		pieceStr = "R"
+	case Knight:
+		pieceStr = "N"
+	case Bishop:
+		pieceStr = "B"
+	case Queen:
+		pieceStr = "Q"
+	case King:
+		pieceStr = "K"
+	default:
+		pieceStr = " "
+	}
+
+	if p.color == White {
+		return color.GreenString(pieceStr)
+	}
+	return color.RedString(pieceStr)
 }
