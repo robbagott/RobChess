@@ -19,7 +19,7 @@ func algebraicToMove() {
 
 // Move represents a move on the chess board. It encompasses a piece, the old square and the new square.
 type Move struct {
-	piece     GamePiece
-	newSquare Square
-	oldSquare Square
+	piece        GamePiece
+	oRank, oFile int
+	nRank, nFile int
 }
