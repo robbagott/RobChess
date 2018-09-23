@@ -111,15 +111,15 @@ func (p *Position) GetMovesAt(f, r int) []Move {
 	case Pawn:
 		moves = append(moves, p.getPawnMoves(f, r, piece.color)...)
 	case Rook:
-		// do something
+		moves = append(moves, p.getRookMoves(f, r, piece.color)...)
 	case Knight:
-		// do something
+		moves = append(moves, p.getKnightMoves(f, r, piece.color)...)
 	case Bishop:
-		// do something
+		moves = append(moves, p.getBishopMoves(f, r, piece.color)...)
 	case Queen:
-		// do something
+		moves = append(moves, p.getQueenMoves(f, r, piece.color)...)
 	case King:
-		// do something
+		moves = append(moves, p.getKingMoves(f, r, piece.color)...)
 	}
 	return moves
 }
@@ -129,49 +129,214 @@ func (p *Position) GetMovesAt(f, r int) []Move {
 func (p *Position) getPawnMoves(f, r int, side Side) []Move {
 	// A pawn can have a maximum of 4 moves (on promotion)
 	moves := make([]Move, 0, 4)
+
+	// Define rank increment direction.
+	var rIncr int
 	if side == White {
-		// Possible forward moves
-		if r == 1 {
-			moves = append(moves, Move{f, r, f, r + 1, ""}, Move{f, r, f, r + 2, ""})
-		} else if r > 1 && r < 6 {
-			moves = append(moves, Move{f, r, f, r + 1, ""})
-		}
+		rIncr = 1
+	} else {
+		rIncr = -1
+	}
 
-		// Possible captures
-		if f-1 >= 0 {
-			if p.board[r+1][f-1].piece.piece != None && p.board[r+1][f-1].piece.color == Black {
-				moves = append(moves, Move{f, r, f - 1, r + 1, ""})
-			}
-		} else if f+1 <= 7 {
-			if p.board[r+1][f+1].piece.piece != None && p.board[r+1][f+1].piece.color == Black {
-				moves = append(moves, Move{f, r, f + 1, r + 1, ""})
-			}
-		}
-	} else if side == Black {
-		// Possible forward moves
-		if r == 1 {
-			moves = append(moves, Move{f, r, f, r + 1, ""}, Move{f, r, f, r + 2, ""})
-		} else if r > 1 && r < 6 {
-			moves = append(moves, Move{f, r, f, r + 1, ""})
-		}
+	// Possible forward moves
+	if r == 1 {
+		moves = append(moves, Move{f, r, f, r + rIncr, ""}, Move{f, r, f, r + rIncr*2, ""})
+	} else if r > 1 && r < 6 {
+		moves = append(moves, Move{f, r, f, r + rIncr, ""})
+	}
 
-		// Possible captures
-		if f-1 >= 0 {
-			if p.board[r-1][f-1].piece.piece != None && p.board[r-1][f-1].piece.color == Black {
-				moves = append(moves, Move{f, r, f - 1, r - 1, ""})
-			}
-		} else if f+1 <= 7 {
-			if p.board[r-1][f+1].piece.piece != None && p.board[r-1][f+1].piece.color == Black {
-				moves = append(moves, Move{f, r, f + 1, r - 1, ""})
-			}
+	// Possible captures
+	if f-1 >= 0 {
+		if p.board[r+1][f-1].piece.piece != None && p.board[r+1][f-1].piece.color != side {
+			moves = append(moves, Move{f, r, f - 1, r + rIncr, ""})
+		}
+	} else if f+1 <= 7 {
+		if p.board[r+1][f+1].piece.piece != None && p.board[r+1][f+1].piece.color != side {
+			moves = append(moves, Move{f, r, f + 1, r + rIncr, ""})
 		}
 	}
 	return moves
 }
 
+// Get possible rook moves for a rook located at file r and rank f of color side.
 func (p *Position) getRookMoves(f, r int, side Side) []Move {
 	moves := make([]Move, 0, 20)
 
+	// Look right
+	for i := f + 1; i <= 7; i++ {
+		if canMoveToSquare(*p, i, r, side) {
+			moves = append(moves, Move{f, r, i, r, ""})
+		} else {
+			break
+		}
+	}
+
+	// Look left
+	for i := f - 1; i >= 0; i-- {
+		if canMoveToSquare(*p, i, r, side) {
+			moves = append(moves, Move{f, r, i, r, ""})
+		} else {
+			break
+		}
+	}
+
+	// Look forward
+	for i := r + 1; i <= 7; i++ {
+		if canMoveToSquare(*p, f, i, side) {
+			moves = append(moves, Move{f, r, f, i, ""})
+		} else {
+			break
+		}
+	}
+
+	// Look backward
+	for i := r - 1; i >= 0; i-- {
+		if canMoveToSquare(*p, f, i, side) {
+			moves = append(moves, Move{f, r, f, i, ""})
+		} else {
+			break
+		}
+	}
+	return moves
+}
+
+// Get possible bishop moves for a bishop located at file r and rank f of color side.
+func (p *Position) getBishopMoves(f, r int, side Side) []Move {
+	moves := make([]Move, 0, 20)
+	// Look diagonally forward-right
+	for i, j := r+1, f+1; i < 8 && j < 8; i, j = r+1, f+1 {
+		if canMoveToSquare(*p, j, i, side) {
+			moves = append(moves, Move{f, r, j, i, ""})
+		} else {
+			break
+		}
+	}
+	// Look diagonally forward-left
+	for i, j := r+1, f-1; i < 8 && j >= 0; i, j = r+1, f-1 {
+		if canMoveToSquare(*p, j, i, side) {
+			moves = append(moves, Move{f, r, j, i, ""})
+		} else {
+			break
+		}
+	}
+	// Look diagonally backward-right
+	for i, j := r-1, f+1; i >= 0 && j < 8; i, j = r-1, f+1 {
+		if canMoveToSquare(*p, j, i, side) {
+			moves = append(moves, Move{f, r, j, i, ""})
+		} else {
+			break
+		}
+	}
+	// Look diagonally backward-left
+	for i, j := r-1, f-1; i >= 0 && j >= 0; i, j = r-1, f-1 {
+		if canMoveToSquare(*p, j, i, side) {
+			moves = append(moves, Move{f, r, j, i, ""})
+		} else {
+			break
+		}
+	}
+	return moves
+}
+
+// Get possible queen moves for a queen located at file r and rank f of color side.
+func (p *Position) getKnightMoves(f, r int, side Side) []Move {
+	moves := make([]Move, 0, 8)
+
+	// Right L moves
+	if canMoveToSquare(*p, f+2, r+1, side) {
+		moves = append(moves, Move{f, r, f + 2, r + 1, ""})
+	}
+	if canMoveToSquare(*p, f+2, r-1, side) {
+		moves = append(moves, Move{f, r, f + 2, r - 1, ""})
+	}
+
+	// Left L moves
+	if canMoveToSquare(*p, f-2, r+1, side) {
+		moves = append(moves, Move{f, r, f - 2, r + 1, ""})
+	}
+	if canMoveToSquare(*p, f-2, r-1, side) {
+		moves = append(moves, Move{f, r, f - 2, r - 1, ""})
+	}
+
+	// Forward L moves
+	if canMoveToSquare(*p, f+1, r+2, side) {
+		moves = append(moves, Move{f, r, f + 1, r + 2, ""})
+	}
+	if canMoveToSquare(*p, f-1, r+2, side) {
+		moves = append(moves, Move{f, r, f - 1, r + 2, ""})
+	}
+
+	// Backward L moves
+	if canMoveToSquare(*p, f+1, r-2, side) {
+		moves = append(moves, Move{f, r, f + 1, r - 2, ""})
+	}
+	if canMoveToSquare(*p, f-1, r-2, side) {
+		moves = append(moves, Move{f, r, f - 1, r - 2, ""})
+	}
+	return moves
+}
+
+// Get possible queen moves for a queen located at file r and rank f of color side.
+func (p *Position) getQueenMoves(f, r int, side Side) []Move {
+	moves := make([]Move, 0, 30)
+	moves = append(moves, p.getRookMoves(f, r, side)...)
+	moves = append(moves, p.getBishopMoves(f, r, side)...)
+	return moves
+}
+
+// Get possible king moves for a king located at file r and rank f of color side.
+func (p *Position) getKingMoves(f, r int, side Side) []Move {
+	// Look at adjacent squares
+	// TODO Evaluate checks
+	moves := make([]Move, 0, 8)
+	// Right
+	if canMoveToSquare(*p, f+1, r, side) {
+		moves = append(moves, Move{f, r, f + 1, r, ""})
+	}
+	// Back-right
+	if canMoveToSquare(*p, f+1, r-1, side) {
+		moves = append(moves, Move{f, r, f + 1, r - 1, ""})
+	}
+	// Back
+	if canMoveToSquare(*p, f, r-1, side) {
+		moves = append(moves, Move{f, r, f, r - 1, ""})
+	}
+	// Back-left
+	if canMoveToSquare(*p, f-1, r-1, side) {
+		moves = append(moves, Move{f, r, f - 1, r - 1, ""})
+	}
+	// Left
+	if canMoveToSquare(*p, f-1, r, side) {
+		moves = append(moves, Move{f, r, f - 1, r, ""})
+	}
+	// Forward-left
+	if canMoveToSquare(*p, f-1, r+1, side) {
+		moves = append(moves, Move{f, r, f - 1, r + 1, ""})
+	}
+	// Forward
+	if canMoveToSquare(*p, f, r+1, side) {
+		moves = append(moves, Move{f, r, f, r + 1, ""})
+	}
+	// Forward-right
+	if canMoveToSquare(*p, f+1, r+1, side) {
+		moves = append(moves, Move{f, r, f + 1, r + 1, ""})
+	}
+
+	return moves
+}
+
+// canMoveToSquare evaluates if a piece of a specific color can occupy the square specified.
+func canMoveToSquare(p Position, f, r int, side Side) bool {
+	if f < 0 || f > 7 || r < 0 || f > 7 {
+		return false
+	}
+	if p.board[r][f].piece.piece == None {
+		return true
+	} else if p.board[r][f].piece.color == side {
+		return false
+	} else {
+		return true
+	}
 }
 
 // GetPieces returns an array of pieces for the side indicated in a position.
