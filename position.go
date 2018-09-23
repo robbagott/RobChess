@@ -137,7 +137,6 @@ func (p *Position) getPawnMoves(f, r int, side Side) []Move {
 	} else {
 		rIncr = -1
 	}
-
 	// Possible forward moves
 	if r == 1 {
 		moves = append(moves, Move{f, r, f, r + rIncr, ""}, Move{f, r, f, r + rIncr*2, ""})
@@ -155,6 +154,7 @@ func (p *Position) getPawnMoves(f, r int, side Side) []Move {
 			moves = append(moves, Move{f, r, f + 1, r + rIncr, ""})
 		}
 	}
+
 	return moves
 }
 
@@ -327,7 +327,7 @@ func (p *Position) getKingMoves(f, r int, side Side) []Move {
 
 // canMoveToSquare evaluates if a piece of a specific color can occupy the square specified.
 func canMoveToSquare(p Position, f, r int, side Side) bool {
-	if f < 0 || f > 7 || r < 0 || f > 7 {
+	if f < 0 || f > 7 || r < 0 || r > 7 {
 		return false
 	}
 	if p.board[r][f].piece.piece == None {
@@ -354,13 +354,14 @@ func (p *Position) GetPieces(side Side) []GamePiece {
 }
 
 // SumMaterial performs a rudimentary sum of the material using the classic chess piece values.
-func (p *Position) SumMaterial(pieces []GamePiece) {
+func (p *Position) SumMaterial(pieces []GamePiece) float64 {
 	var sum float64
 	for i := range pieces {
 		if pieces[i].piece != None && pieces[i].piece != King {
 			sum += pieces[i].Value()
 		}
 	}
+	return sum
 }
 
 // Value returns the value of the piece. For now, the value is the classical chess piece value.
@@ -381,4 +382,22 @@ func (p GamePiece) Value() float64 {
 	default:
 		return 1
 	}
+}
+
+// MakeMove modifies the given position to represent the position after the move is made.
+func (p *Position) MakeMove(move Move) bool {
+	of, or := move.oFile, move.oRank
+	nf, nr := move.nFile, move.nRank
+	if of > 7 || of < 0 || or > 7 || or < 0 ||
+		nf > 7 || nf < 0 || nr > 7 || nr < 0 {
+		return false
+	}
+
+	// Handle promotion
+
+	// Make normal move
+	piece := p.board[or][of].piece
+	p.board[or][of].piece = GamePiece{None, White}
+	p.board[nr][nf].piece = piece
+	return true
 }
