@@ -1,7 +1,7 @@
 package main
 
 import (
-	"math/rand"
+	"math"
 	"strconv"
 )
 
@@ -27,11 +27,6 @@ func NewPosition() *Position {
 
 	pos.Reset()
 	return &pos
-}
-
-// Evaluate takes a position and returns an evaluation of the position as a floating point number.
-func (p *Position) Evaluate() float32 {
-	return float32(rand.Intn(100))
 }
 
 // Reset resets the chess position to the starting chess arrangement.
@@ -92,4 +87,133 @@ func (p *Position) String() string {
 	}
 	boardPrint += "     a   b   c   d   e   f   g   h\n"
 	return boardPrint
+}
+
+// GetMoves returns the set of moves that are possible for the side indicated.
+func (p *Position) GetMoves(side Side) []Move {
+	moves := make([]Move, 0, 20)
+
+	// Only pieces can make moves in chess, so we iterate through the board and check for pieces.
+	// If a piece is found, we then check for legal moves for that piece.
+	for r := range p.board {
+		for f := range p.board[r] {
+			moves = append(moves, p.GetMovesAt(f, r)...)
+		}
+	}
+	return moves
+}
+
+// GetMovesAt returns the set of moves that are possible for the piece located at file f and rank r
+func (p *Position) GetMovesAt(f, r int) []Move {
+	moves := make([]Move, 0, 20)
+	piece := p.board[r][f].piece
+	switch piece.piece {
+	case Pawn:
+		moves = append(moves, p.getPawnMoves(f, r, piece.color)...)
+	case Rook:
+		// do something
+	case Knight:
+		// do something
+	case Bishop:
+		// do something
+	case Queen:
+		// do something
+	case King:
+		// do something
+	}
+	return moves
+}
+
+// TODO account for en passant
+// Gets possible pawn moves starting at a specific square.
+func (p *Position) getPawnMoves(f, r int, side Side) []Move {
+	// A pawn can have a maximum of 4 moves (on promotion)
+	moves := make([]Move, 0, 4)
+	if side == White {
+		// Possible forward moves
+		if r == 1 {
+			moves = append(moves, Move{f, r, f, r + 1, ""}, Move{f, r, f, r + 2, ""})
+		} else if r > 1 && r < 6 {
+			moves = append(moves, Move{f, r, f, r + 1, ""})
+		}
+
+		// Possible captures
+		if f-1 >= 0 {
+			if p.board[r+1][f-1].piece.piece != None && p.board[r+1][f-1].piece.color == Black {
+				moves = append(moves, Move{f, r, f - 1, r + 1, ""})
+			}
+		} else if f+1 <= 7 {
+			if p.board[r+1][f+1].piece.piece != None && p.board[r+1][f+1].piece.color == Black {
+				moves = append(moves, Move{f, r, f + 1, r + 1, ""})
+			}
+		}
+	} else if side == Black {
+		// Possible forward moves
+		if r == 1 {
+			moves = append(moves, Move{f, r, f, r + 1, ""}, Move{f, r, f, r + 2, ""})
+		} else if r > 1 && r < 6 {
+			moves = append(moves, Move{f, r, f, r + 1, ""})
+		}
+
+		// Possible captures
+		if f-1 >= 0 {
+			if p.board[r-1][f-1].piece.piece != None && p.board[r-1][f-1].piece.color == Black {
+				moves = append(moves, Move{f, r, f - 1, r - 1, ""})
+			}
+		} else if f+1 <= 7 {
+			if p.board[r-1][f+1].piece.piece != None && p.board[r-1][f+1].piece.color == Black {
+				moves = append(moves, Move{f, r, f + 1, r - 1, ""})
+			}
+		}
+	}
+	return moves
+}
+
+func (p *Position) getRookMoves(f, r int, side Side) []Move {
+	moves := make([]Move, 0, 20)
+
+}
+
+// GetPieces returns an array of pieces for the side indicated in a position.
+func (p *Position) GetPieces(side Side) []GamePiece {
+	pieces := make([]GamePiece, 0, 32)
+	for r := range p.board {
+		for f := range p.board[r] {
+			piece := p.board[r][f].piece
+			if piece.piece != None && piece.color == side {
+				pieces = append(pieces, piece)
+			}
+		}
+	}
+	return pieces
+}
+
+// SumMaterial performs a rudimentary sum of the material using the classic chess piece values.
+func (p *Position) SumMaterial(pieces []GamePiece) {
+	var sum float64
+	for i := range pieces {
+		if pieces[i].piece != None && pieces[i].piece != King {
+			sum += pieces[i].Value()
+		}
+	}
+}
+
+// Value returns the value of the piece. For now, the value is the classical chess piece value.
+func (p GamePiece) Value() float64 {
+	switch p.piece {
+	case Pawn:
+		return 1
+	case Rook:
+		return 5
+	case Knight:
+		return 3
+	case Bishop:
+		return 3
+	case Queen:
+		return 9
+	case King:
+		return math.Inf(1)
+	default:
+		return 1
+	}
 }
