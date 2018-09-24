@@ -29,6 +29,16 @@ func NewPosition() *Position {
 	return &pos
 }
 
+// Copy makes a copy of a position
+func (p Position) Copy() *Position {
+	newPos := Position{make([][]Square, len(p.board))}
+	for i := range newPos.board {
+		newPos.board[i] = make([]Square, len(p.board[i]))
+		copy(newPos.board[i], p.board[i])
+	}
+	return &newPos
+}
+
 // Reset resets the chess position to the starting chess arrangement.
 func (p *Position) Reset() {
 	for r := 0; r < 8; r++ {
@@ -71,7 +81,7 @@ func (p *Position) Reset() {
 	}
 }
 
-func (p *Position) String() string {
+func (p Position) String() string {
 	boardPrint := ""
 
 	boardPrint += "   ––––––––––––––––-----------------\n"
@@ -89,6 +99,15 @@ func (p *Position) String() string {
 	return boardPrint
 }
 
+// StringBlack prints the board from black perspective.
+// TODO Currently breaks due to color formatting.
+func (p Position) StringBlack() (result string) {
+	for _, v := range p.String() {
+		result = string(v) + result
+	}
+	return
+}
+
 // GetMoves returns the set of moves that are possible for the side indicated.
 func (p *Position) GetMoves(side Side) []Move {
 	moves := make([]Move, 0, 20)
@@ -97,7 +116,10 @@ func (p *Position) GetMoves(side Side) []Move {
 	// If a piece is found, we then check for legal moves for that piece.
 	for r := range p.board {
 		for f := range p.board[r] {
-			moves = append(moves, p.GetMovesAt(f, r)...)
+			if p.board[r][f].piece.color == side {
+				moves = append(moves, p.GetMovesAt(f, r)...)
+			}
+
 		}
 	}
 	return moves
@@ -137,20 +159,34 @@ func (p *Position) getPawnMoves(f, r int, side Side) []Move {
 	} else {
 		rIncr = -1
 	}
+
 	// Possible forward moves
-	if r == 1 {
-		moves = append(moves, Move{f, r, f, r + rIncr, ""}, Move{f, r, f, r + rIncr*2, ""})
+	if r == 1 && side == White {
+		if p.board[r+rIncr][f].piece.piece == None {
+			moves = append(moves, Move{f, r, f, r + rIncr, ""})
+			if p.board[r+rIncr*2][f].piece.piece == None {
+				moves = append(moves, Move{f, r, f, r + rIncr*2, ""})
+			}
+		}
+
 	} else if r > 1 && r < 6 {
 		moves = append(moves, Move{f, r, f, r + rIncr, ""})
+	} else if r == 7 && side == Black {
+		if p.board[r+rIncr][f].piece.piece == None {
+			moves = append(moves, Move{f, r, f, r + rIncr, ""})
+		}
+		if p.board[r+rIncr*2][f].piece.piece == None {
+			moves = append(moves, Move{f, r, f, r + rIncr*2, ""})
+		}
 	}
 
 	// Possible captures
 	if f-1 >= 0 {
-		if p.board[r+1][f-1].piece.piece != None && p.board[r+1][f-1].piece.color != side {
+		if p.board[r+rIncr][f-1].piece.piece != None && p.board[r+rIncr][f-1].piece.color != side {
 			moves = append(moves, Move{f, r, f - 1, r + rIncr, ""})
 		}
 	} else if f+1 <= 7 {
-		if p.board[r+1][f+1].piece.piece != None && p.board[r+1][f+1].piece.color != side {
+		if p.board[r+rIncr][f+1].piece.piece != None && p.board[r+rIncr][f+1].piece.color != side {
 			moves = append(moves, Move{f, r, f + 1, r + rIncr, ""})
 		}
 	}
@@ -204,7 +240,7 @@ func (p *Position) getRookMoves(f, r int, side Side) []Move {
 func (p *Position) getBishopMoves(f, r int, side Side) []Move {
 	moves := make([]Move, 0, 20)
 	// Look diagonally forward-right
-	for i, j := r+1, f+1; i < 8 && j < 8; i, j = r+1, f+1 {
+	for i, j := r+1, f+1; i < 8 && j < 8; i, j = i+1, j+1 {
 		if canMoveToSquare(*p, j, i, side) {
 			moves = append(moves, Move{f, r, j, i, ""})
 		} else {
@@ -212,7 +248,7 @@ func (p *Position) getBishopMoves(f, r int, side Side) []Move {
 		}
 	}
 	// Look diagonally forward-left
-	for i, j := r+1, f-1; i < 8 && j >= 0; i, j = r+1, f-1 {
+	for i, j := r+1, f-1; i < 8 && j >= 0; i, j = i+1, j-1 {
 		if canMoveToSquare(*p, j, i, side) {
 			moves = append(moves, Move{f, r, j, i, ""})
 		} else {
@@ -220,7 +256,7 @@ func (p *Position) getBishopMoves(f, r int, side Side) []Move {
 		}
 	}
 	// Look diagonally backward-right
-	for i, j := r-1, f+1; i >= 0 && j < 8; i, j = r-1, f+1 {
+	for i, j := r-1, f+1; i >= 0 && j < 8; i, j = i-1, j+1 {
 		if canMoveToSquare(*p, j, i, side) {
 			moves = append(moves, Move{f, r, j, i, ""})
 		} else {
@@ -228,7 +264,7 @@ func (p *Position) getBishopMoves(f, r int, side Side) []Move {
 		}
 	}
 	// Look diagonally backward-left
-	for i, j := r-1, f-1; i >= 0 && j >= 0; i, j = r-1, f-1 {
+	for i, j := r-1, f-1; i >= 0 && j >= 0; i, j = i-1, j-1 {
 		if canMoveToSquare(*p, j, i, side) {
 			moves = append(moves, Move{f, r, j, i, ""})
 		} else {

@@ -1,6 +1,8 @@
 package main
 
-import "math"
+import (
+	"math"
+)
 
 // Evaluate uses various heuristics to create a numeric evaluation of the position.
 func Evaluate(p Position) float64 {
@@ -31,9 +33,10 @@ func Calculate(p Position, side Side, depth int) float64 {
 	// Find possible moves
 	moves := p.GetMoves(side)
 	bestSoFar := math.Inf(-1)
+
 	// Calculate possible moves
 	for i := range moves {
-		newPos := p
+		newPos := *p.Copy()
 		newPos.MakeMove(moves[i])
 		bestSoFar = math.Max(bestSoFar, -Calculate(newPos, oppSide, depth-1))
 	}
@@ -42,17 +45,18 @@ func Calculate(p Position, side Side, depth int) float64 {
 	return bestSoFar
 }
 
-// Think finds the best move according to its evaluation function.
+// Think finds the best move according to the evaluation function.
 func Think(p Position, side Side) Move {
 	// Find possible moves
 	moves := p.GetMoves(side)
 	bestSoFar := math.Inf(-1)
 	var bestMoveSoFar Move
+
 	// Calculate possible moves
 	for i := range moves {
-		newPos := p
+		newPos := *p.Copy()
 		newPos.MakeMove(moves[i])
-		eval := Calculate(newPos, side, 5)
+		eval := Calculate(newPos, side, 3)
 		if eval > bestSoFar {
 			bestMoveSoFar = moves[i]
 			bestSoFar = eval

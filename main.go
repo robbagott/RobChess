@@ -7,8 +7,8 @@ import (
 )
 
 func main() {
-	go Start()
-	listenForInterrupt()
+	StartUserSession()
+	// listenForInterrupt()
 }
 
 func listenForInterrupt() {
@@ -21,9 +21,4 @@ func listenForInterrupt() {
 
 	<-signalChan
 	fmt.Println("Received interrupt signal. Stopping operation.")
-}
-
-// Task represents a concurrent task. It has a channel which it listens on for when to gracefully exit.
-type Task struct {
-	closed chan struct{}
 }

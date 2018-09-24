@@ -31,7 +31,7 @@ type GamePiece struct {
 	color Side
 }
 
-func (p *GamePiece) String() string {
+func (p GamePiece) String() string {
 	var pieceStr string
 	switch p.piece {
 	case Pawn:
