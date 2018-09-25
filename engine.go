@@ -47,6 +47,13 @@ func Calculate(p Position, side Side, depth int) float64 {
 		newPos := *p.Copy()
 		newPos.MakeMove(moves[i])
 		bestSoFar = math.Max(bestSoFar, -Calculate(newPos, oppSide, depth-1))
+		if depth == 1 {
+			fmt.Printf("%v - %f\n", moves[i], -Calculate(newPos, oppSide, depth-1))
+		}
+		if depth == 2 {
+			fmt.Printf("\t%v - %f\n", moves[i])
+			fmt.Println(newPos)
+		}
 	}
 
 	// From possible moves, choose optimal move. Return the optimal move with its evaluation.
@@ -55,6 +62,13 @@ func Calculate(p Position, side Side, depth int) float64 {
 
 // Think finds the best move according to the evaluation function.
 func Think(p Position, side Side) Move {
+	var oppSide Side
+	if side == White {
+		oppSide = Black
+	} else {
+		oppSide = White
+	}
+
 	// Find possible moves
 	moves := p.GetMoves(side)
 	bestSoFar := math.Inf(-1)
@@ -65,7 +79,7 @@ func Think(p Position, side Side) Move {
 	for i := range moves {
 		newPos := *p.Copy()
 		newPos.MakeMove(moves[i])
-		eval := Calculate(newPos, side, 2)
+		eval := -Calculate(newPos, oppSide, 2)
 		if eval > bestSoFar {
 			bestMoveSoFar = moves[i]
 			bestSoFar = eval

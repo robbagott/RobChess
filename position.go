@@ -411,9 +411,9 @@ func (p *Position) GetPieces(side Side) []GamePiece {
 // SumMaterial performs a rudimentary sum of the material using the classic chess piece values.
 func (p *Position) SumMaterial(pieces []GamePiece) float64 {
 	var sum float64
-	for i := range pieces {
-		if pieces[i].piece != None && pieces[i].piece != King {
-			sum += pieces[i].Value()
+	for _, piece := range pieces {
+		if piece.piece != None {
+			sum += piece.Value()
 		}
 	}
 	return sum
