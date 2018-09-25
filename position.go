@@ -1,7 +1,6 @@
 package main
 
 import (
-	"math"
 	"strconv"
 )
 
@@ -146,7 +145,7 @@ func (p *Position) GetMovesAt(f, r int) []Move {
 	return moves
 }
 
-// TODO account for en passant
+// TODO account for en passant. Investigate if the engine knows how to move black pawns.
 // Gets possible pawn moves starting at a specific square.
 func (p *Position) getPawnMoves(f, r int, side Side) []Move {
 	// A pawn can have a maximum of 4 moves (on promotion)
@@ -161,22 +160,16 @@ func (p *Position) getPawnMoves(f, r int, side Side) []Move {
 	}
 
 	// Possible forward moves
-	if r == 1 && side == White {
+	if r == 1 && side == White || r == 6 && side == Black {
 		if p.board[r+rIncr][f].piece.piece == None {
 			moves = append(moves, Move{f, r, f, r + rIncr, ""})
 			if p.board[r+rIncr*2][f].piece.piece == None {
 				moves = append(moves, Move{f, r, f, r + rIncr*2, ""})
 			}
 		}
-
-	} else if r > 1 && r < 6 {
-		moves = append(moves, Move{f, r, f, r + rIncr, ""})
-	} else if r == 7 && side == Black {
+	} else if r > 1 && side == White || r < 6 && side == Black {
 		if p.board[r+rIncr][f].piece.piece == None {
 			moves = append(moves, Move{f, r, f, r + rIncr, ""})
-		}
-		if p.board[r+rIncr*2][f].piece.piece == None {
-			moves = append(moves, Move{f, r, f, r + rIncr*2, ""})
 		}
 	}
 
@@ -185,7 +178,8 @@ func (p *Position) getPawnMoves(f, r int, side Side) []Move {
 		if p.board[r+rIncr][f-1].piece.piece != None && p.board[r+rIncr][f-1].piece.color != side {
 			moves = append(moves, Move{f, r, f - 1, r + rIncr, ""})
 		}
-	} else if f+1 <= 7 {
+	}
+	if f+1 <= 7 {
 		if p.board[r+rIncr][f+1].piece.piece != None && p.board[r+rIncr][f+1].piece.color != side {
 			moves = append(moves, Move{f, r, f + 1, r + rIncr, ""})
 		}
@@ -200,8 +194,11 @@ func (p *Position) getRookMoves(f, r int, side Side) []Move {
 
 	// Look right
 	for i := f + 1; i <= 7; i++ {
-		if canMoveToSquare(*p, i, r, side) {
+		if canMove, capture := canMoveToSquare(*p, i, r, side); canMove {
 			moves = append(moves, Move{f, r, i, r, ""})
+			if capture {
+				break
+			}
 		} else {
 			break
 		}
@@ -209,8 +206,11 @@ func (p *Position) getRookMoves(f, r int, side Side) []Move {
 
 	// Look left
 	for i := f - 1; i >= 0; i-- {
-		if canMoveToSquare(*p, i, r, side) {
+		if canMove, capture := canMoveToSquare(*p, i, r, side); canMove {
 			moves = append(moves, Move{f, r, i, r, ""})
+			if capture {
+				break
+			}
 		} else {
 			break
 		}
@@ -218,8 +218,11 @@ func (p *Position) getRookMoves(f, r int, side Side) []Move {
 
 	// Look forward
 	for i := r + 1; i <= 7; i++ {
-		if canMoveToSquare(*p, f, i, side) {
+		if canMove, capture := canMoveToSquare(*p, f, i, side); canMove {
 			moves = append(moves, Move{f, r, f, i, ""})
+			if capture {
+				break
+			}
 		} else {
 			break
 		}
@@ -227,8 +230,11 @@ func (p *Position) getRookMoves(f, r int, side Side) []Move {
 
 	// Look backward
 	for i := r - 1; i >= 0; i-- {
-		if canMoveToSquare(*p, f, i, side) {
+		if canMove, capture := canMoveToSquare(*p, f, i, side); canMove {
 			moves = append(moves, Move{f, r, f, i, ""})
+			if capture {
+				break
+			}
 		} else {
 			break
 		}
@@ -241,32 +247,44 @@ func (p *Position) getBishopMoves(f, r int, side Side) []Move {
 	moves := make([]Move, 0, 20)
 	// Look diagonally forward-right
 	for i, j := r+1, f+1; i < 8 && j < 8; i, j = i+1, j+1 {
-		if canMoveToSquare(*p, j, i, side) {
+		if canMove, capture := canMoveToSquare(*p, j, i, side); canMove {
 			moves = append(moves, Move{f, r, j, i, ""})
+			if capture {
+				break
+			}
 		} else {
 			break
 		}
 	}
 	// Look diagonally forward-left
 	for i, j := r+1, f-1; i < 8 && j >= 0; i, j = i+1, j-1 {
-		if canMoveToSquare(*p, j, i, side) {
+		if canMove, capture := canMoveToSquare(*p, j, i, side); canMove {
 			moves = append(moves, Move{f, r, j, i, ""})
+			if capture {
+				break
+			}
 		} else {
 			break
 		}
 	}
 	// Look diagonally backward-right
 	for i, j := r-1, f+1; i >= 0 && j < 8; i, j = i-1, j+1 {
-		if canMoveToSquare(*p, j, i, side) {
+		if canMove, capture := canMoveToSquare(*p, j, i, side); canMove {
 			moves = append(moves, Move{f, r, j, i, ""})
+			if capture {
+				break
+			}
 		} else {
 			break
 		}
 	}
 	// Look diagonally backward-left
 	for i, j := r-1, f-1; i >= 0 && j >= 0; i, j = i-1, j-1 {
-		if canMoveToSquare(*p, j, i, side) {
+		if canMove, capture := canMoveToSquare(*p, j, i, side); canMove {
 			moves = append(moves, Move{f, r, j, i, ""})
+			if capture {
+				break
+			}
 		} else {
 			break
 		}
@@ -279,34 +297,34 @@ func (p *Position) getKnightMoves(f, r int, side Side) []Move {
 	moves := make([]Move, 0, 8)
 
 	// Right L moves
-	if canMoveToSquare(*p, f+2, r+1, side) {
+	if canMove, _ := canMoveToSquare(*p, f+2, r+1, side); canMove {
 		moves = append(moves, Move{f, r, f + 2, r + 1, ""})
 	}
-	if canMoveToSquare(*p, f+2, r-1, side) {
+	if canMove, _ := canMoveToSquare(*p, f+2, r-1, side); canMove {
 		moves = append(moves, Move{f, r, f + 2, r - 1, ""})
 	}
 
 	// Left L moves
-	if canMoveToSquare(*p, f-2, r+1, side) {
+	if canMove, _ := canMoveToSquare(*p, f-2, r+1, side); canMove {
 		moves = append(moves, Move{f, r, f - 2, r + 1, ""})
 	}
-	if canMoveToSquare(*p, f-2, r-1, side) {
+	if canMove, _ := canMoveToSquare(*p, f-2, r-1, side); canMove {
 		moves = append(moves, Move{f, r, f - 2, r - 1, ""})
 	}
 
 	// Forward L moves
-	if canMoveToSquare(*p, f+1, r+2, side) {
+	if canMove, _ := canMoveToSquare(*p, f+1, r+2, side); canMove {
 		moves = append(moves, Move{f, r, f + 1, r + 2, ""})
 	}
-	if canMoveToSquare(*p, f-1, r+2, side) {
+	if canMove, _ := canMoveToSquare(*p, f-1, r+2, side); canMove {
 		moves = append(moves, Move{f, r, f - 1, r + 2, ""})
 	}
 
 	// Backward L moves
-	if canMoveToSquare(*p, f+1, r-2, side) {
+	if canMove, _ := canMoveToSquare(*p, f+1, r-2, side); canMove {
 		moves = append(moves, Move{f, r, f + 1, r - 2, ""})
 	}
-	if canMoveToSquare(*p, f-1, r-2, side) {
+	if canMove, _ := canMoveToSquare(*p, f-1, r-2, side); canMove {
 		moves = append(moves, Move{f, r, f - 1, r - 2, ""})
 	}
 	return moves
@@ -326,35 +344,35 @@ func (p *Position) getKingMoves(f, r int, side Side) []Move {
 	// TODO Evaluate checks
 	moves := make([]Move, 0, 8)
 	// Right
-	if canMoveToSquare(*p, f+1, r, side) {
+	if canMove, _ := canMoveToSquare(*p, f+1, r, side); canMove {
 		moves = append(moves, Move{f, r, f + 1, r, ""})
 	}
 	// Back-right
-	if canMoveToSquare(*p, f+1, r-1, side) {
+	if canMove, _ := canMoveToSquare(*p, f+1, r-1, side); canMove {
 		moves = append(moves, Move{f, r, f + 1, r - 1, ""})
 	}
 	// Back
-	if canMoveToSquare(*p, f, r-1, side) {
+	if canMove, _ := canMoveToSquare(*p, f, r-1, side); canMove {
 		moves = append(moves, Move{f, r, f, r - 1, ""})
 	}
 	// Back-left
-	if canMoveToSquare(*p, f-1, r-1, side) {
+	if canMove, _ := canMoveToSquare(*p, f-1, r-1, side); canMove {
 		moves = append(moves, Move{f, r, f - 1, r - 1, ""})
 	}
 	// Left
-	if canMoveToSquare(*p, f-1, r, side) {
+	if canMove, _ := canMoveToSquare(*p, f-1, r, side); canMove {
 		moves = append(moves, Move{f, r, f - 1, r, ""})
 	}
 	// Forward-left
-	if canMoveToSquare(*p, f-1, r+1, side) {
+	if canMove, _ := canMoveToSquare(*p, f-1, r+1, side); canMove {
 		moves = append(moves, Move{f, r, f - 1, r + 1, ""})
 	}
 	// Forward
-	if canMoveToSquare(*p, f, r+1, side) {
+	if canMove, _ := canMoveToSquare(*p, f, r+1, side); canMove {
 		moves = append(moves, Move{f, r, f, r + 1, ""})
 	}
 	// Forward-right
-	if canMoveToSquare(*p, f+1, r+1, side) {
+	if canMove, _ := canMoveToSquare(*p, f+1, r+1, side); canMove {
 		moves = append(moves, Move{f, r, f + 1, r + 1, ""})
 	}
 
@@ -362,16 +380,17 @@ func (p *Position) getKingMoves(f, r int, side Side) []Move {
 }
 
 // canMoveToSquare evaluates if a piece of a specific color can occupy the square specified.
-func canMoveToSquare(p Position, f, r int, side Side) bool {
+func canMoveToSquare(p Position, f, r int, side Side) (canMove, capture bool) {
 	if f < 0 || f > 7 || r < 0 || r > 7 {
-		return false
+		return false, false
 	}
+
 	if p.board[r][f].piece.piece == None {
-		return true
+		return true, false
 	} else if p.board[r][f].piece.color == side {
-		return false
+		return false, false
 	} else {
-		return true
+		return true, true
 	}
 }
 
@@ -398,26 +417,6 @@ func (p *Position) SumMaterial(pieces []GamePiece) float64 {
 		}
 	}
 	return sum
-}
-
-// Value returns the value of the piece. For now, the value is the classical chess piece value.
-func (p GamePiece) Value() float64 {
-	switch p.piece {
-	case Pawn:
-		return 1
-	case Rook:
-		return 5
-	case Knight:
-		return 3
-	case Bishop:
-		return 3
-	case Queen:
-		return 9
-	case King:
-		return math.Inf(1)
-	default:
-		return 1
-	}
 }
 
 // MakeMove modifies the given position to represent the position after the move is made.

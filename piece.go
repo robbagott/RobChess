@@ -1,6 +1,10 @@
 package main
 
-import "github.com/fatih/color"
+import (
+	"math"
+
+	"github.com/fatih/color"
+)
 
 // Piece represents a type of chess piece.
 type Piece int
@@ -54,4 +58,24 @@ func (p GamePiece) String() string {
 		return color.GreenString(pieceStr)
 	}
 	return color.RedString(pieceStr)
+}
+
+// Value returns the value of the piece. For now, the value is the classical chess piece value.
+func (p GamePiece) Value() float64 {
+	switch p.piece {
+	case Pawn:
+		return 1
+	case Rook:
+		return 5
+	case Knight:
+		return 3
+	case Bishop:
+		return 3
+	case Queen:
+		return 9
+	case King:
+		return math.Inf(1)
+	default:
+		return 1
+	}
 }

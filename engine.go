@@ -1,26 +1,34 @@
 package main
 
 import (
+	"fmt"
 	"math"
 )
 
 // Evaluate uses various heuristics to create a numeric evaluation of the position.
-func Evaluate(p Position) float64 {
+func Evaluate(p Position, side Side) float64 {
+	var oppSide Side
+	if side == White {
+		oppSide = Black
+	} else {
+		oppSide = White
+	}
+
 	// For now, let's play like a child. Maximize material.
-	whitePieces := p.GetPieces(White)
-	whiteSum := p.SumMaterial(whitePieces)
+	sidePieces := p.GetPieces(side)
+	sideSum := p.SumMaterial(sidePieces)
 
-	blackPieces := p.GetPieces(Black)
-	blackSum := p.SumMaterial(blackPieces)
+	oppPieces := p.GetPieces(oppSide)
+	oppSum := p.SumMaterial(oppPieces)
 
-	return whiteSum - blackSum
+	return sideSum - oppSum
 }
 
 // Calculate is an implementation of negaMax. Perhaps someday it will implement negaScout.
 func Calculate(p Position, side Side, depth int) float64 {
 	// Evaluate the position if we're at the max depth.
 	if depth == 0 {
-		return Evaluate(p)
+		return Evaluate(p, side)
 	}
 
 	var oppSide Side
@@ -52,11 +60,12 @@ func Think(p Position, side Side) Move {
 	bestSoFar := math.Inf(-1)
 	var bestMoveSoFar Move
 
+	fmt.Println(moves)
 	// Calculate possible moves
 	for i := range moves {
 		newPos := *p.Copy()
 		newPos.MakeMove(moves[i])
-		eval := Calculate(newPos, side, 3)
+		eval := Calculate(newPos, side, 2)
 		if eval > bestSoFar {
 			bestMoveSoFar = moves[i]
 			bestSoFar = eval

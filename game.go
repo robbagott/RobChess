@@ -139,3 +139,7 @@ func NewMove(oFile, oRank, nFile, nRank int, promoPiece string) (Move, bool) {
 		promoPiece}
 	return move, true
 }
+
+func (m Move) String() string {
+	return fmt.Sprintf("Move: %d%d %d%d", m.oFile, m.oRank, m.nFile, m.nRank)
+}
