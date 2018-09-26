@@ -159,6 +159,11 @@ func (p *Position) getPawnMoves(f, r int, side Side) []Move {
 		rIncr = -1
 	}
 
+	// TODO remove and teach about promotion
+	if r == 7 && side == White || r == 0 && side == Black {
+		return moves
+	}
+
 	// Possible forward moves
 	if r == 1 && side == White || r == 6 && side == Black {
 		if p.board[r+rIncr][f].piece.piece == None {

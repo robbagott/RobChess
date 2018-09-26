@@ -31,12 +31,7 @@ func StartUserSession() {
 }
 
 func gameLoop(side Side, playerSide Side, pos Position, printFunc func() string) {
-	var oppSide Side
-	if side == White {
-		oppSide = Black
-	} else {
-		oppSide = White
-	}
+	var oppSide = side.OppSide()
 
 	if side == playerSide {
 		move := readMove()
@@ -53,7 +48,7 @@ func gameLoop(side Side, playerSide Side, pos Position, printFunc func() string)
 		fmt.Printf("Engine Move: %v\n", engineMove)
 		pos.MakeMove(engineMove)
 		fmt.Println(printFunc())
-		fmt.Printf("I think your moves are %v", pos.GetMoves(oppSide))
+		// fmt.Printf("I think your moves are %v", pos.GetMoves(oppSide))
 		gameLoop(oppSide, playerSide, pos, printFunc)
 	}
 }

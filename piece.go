@@ -1,8 +1,6 @@
 package main
 
 import (
-	"math"
-
 	"github.com/fatih/color"
 )
 
@@ -33,6 +31,14 @@ const (
 type GamePiece struct {
 	piece Piece
 	color Side
+}
+
+// OppSide return the opposite side to the one given
+func (s Side) OppSide() Side {
+	if s == White {
+		return Black
+	}
+	return White
 }
 
 func (p GamePiece) String() string {
@@ -74,7 +80,7 @@ func (p GamePiece) Value() float64 {
 	case Queen:
 		return 9
 	case King:
-		return math.Inf(1)
+		return 200
 	default:
 		return 1
 	}
