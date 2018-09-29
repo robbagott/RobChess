@@ -82,7 +82,6 @@ func (p *Position) Reset() {
 
 func (p Position) String() string {
 	boardPrint := ""
-
 	boardPrint += "   ––––––––––––––––-----------------\n"
 	for r := len(p.board) - 1; r >= 0; r-- {
 		boardPrint += " " + strconv.Itoa(r+1) + " "
@@ -250,6 +249,7 @@ func (p *Position) getRookMoves(f, r int, side Side) []Move {
 // Get possible bishop moves for a bishop located at file r and rank f of color side.
 func (p *Position) getBishopMoves(f, r int, side Side) []Move {
 	moves := make([]Move, 0, 20)
+
 	// Look diagonally forward-right
 	for i, j := r+1, f+1; i < 8 && j < 8; i, j = i+1, j+1 {
 		if canMove, capture := canMoveToSquare(*p, j, i, side); canMove {
@@ -399,6 +399,12 @@ func canMoveToSquare(p Position, f, r int, side Side) (canMove, capture bool) {
 	}
 }
 
+// inCheck checks if the square at f, r is attacked by opponent's pieces.
+func inCheck(p Position, f, r int, side Side) bool {
+	return false
+	//TODO
+}
+
 // GetPieces returns an array of pieces for the side indicated in a position.
 func (p *Position) GetPieces(side Side) []GamePiece {
 	pieces := make([]GamePiece, 0, 32)
@@ -424,6 +430,19 @@ func (p *Position) SumMaterial(pieces []GamePiece) float64 {
 	return sum
 }
 
+// CentralControl returns a simple count of the number of squares in the center occupied by the specified side's pieces.
+func (p *Position) CentralControl(side Side) float64 {
+	count := 0.0
+	for r := 2; r < 5; r++ {
+		for f := 2; f < 5; f++ {
+			if p.board[r][f].piece.color == side {
+				count++
+			}
+		}
+	}
+	return count
+}
+
 // MakeMove modifies the given position to represent the position after the move is made.
 func (p *Position) MakeMove(move Move) bool {
 	of, or := move.oFile, move.oRank
@@ -433,7 +452,7 @@ func (p *Position) MakeMove(move Move) bool {
 		return false
 	}
 
-	// Handle promotion
+	// TODO handle promotion
 
 	// Make normal move
 	piece := p.board[or][of].piece

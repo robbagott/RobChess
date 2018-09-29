@@ -1,24 +1,38 @@
 package main
 
 import (
-	"fmt"
+	"flag"
+	"log"
+	_ "net/http/pprof"
 	"os"
-	"os/signal"
+	"runtime"
+	"runtime/pprof"
 )
 
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
+
 func main() {
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 	StartUserSession()
-	// listenForInterrupt()
-}
 
-func listenForInterrupt() {
-	fmt.Println("Listening for interrupt.")
-	// Create a channel which transfers objects of type os.Signal
-	signalChan := make(chan os.Signal, 1)
-
-	// signal.Notify writes to signalChan when an os.Interrupt signal is detected.
-	signal.Notify(signalChan, os.Interrupt)
-
-	<-signalChan
-	fmt.Println("Received interrupt signal. Stopping operation.")
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+		f.Close()
+	}
 }

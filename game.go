@@ -11,45 +11,40 @@ var moveExp = *regexp.MustCompile("(?P<file1>[a-h])(?P<rank1>[1-8])(?P<file2>[a-
 // StartUserSession initiates a chess game with RobChess.
 func StartUserSession() {
 	fmt.Println("Welcome to RobChess! When entering moves, please use long algebraic chess notation.")
-	fmt.Println(
-		"Long algrebraic notation is the same as short algrebraic notation, except that instead\n" +
-			"of entering a piece to move as the first symbol, the square that the piece resides on should\n" +
-			"be used as an alternative. In addition, when a pawn is promoted, you must provide the piece the\n" +
-			"pawn is being promoted to at the end (e.g. e7e8q).\n")
 
+	game := *NewGame()
 	side := promptColor()
 	var printFunc func() string
-	pos := NewPosition()
 	if side == White {
-		printFunc = pos.String
+		printFunc = game.position.String
 	} else {
 		// TODO Switch back to pos.StringBlack
-		printFunc = pos.String
+		printFunc = game.position.String
 	}
+
 	fmt.Println(printFunc())
-	gameLoop(White, side, *pos, printFunc)
+	gameLoop(White, side, game, printFunc)
 }
 
-func gameLoop(side Side, playerSide Side, pos Position, printFunc func() string) {
+func gameLoop(side Side, playerSide Side, g GameContext, printFunc func() string) {
 	var oppSide = side.OppSide()
 
 	if side == playerSide {
 		move := readMove()
-		if ok := pos.MakeMove(move); !ok {
+		if ok := g.MakeMove(move); !ok {
 			fmt.Printf("Something went wrong processing move: %+v\n", move)
 			return
 		}
 		fmt.Println(printFunc())
-		gameLoop(oppSide, playerSide, pos, printFunc)
+		gameLoop(oppSide, playerSide, g, printFunc)
 	} else {
-		fmt.Printf("I'm playing %v\n", side)
 		fmt.Println("Engine is thinking...")
-		engineMove := Think(pos, side)
+		engineMove := Think(g, side)
 		fmt.Printf("Engine Move: %v\n", engineMove)
-		pos.MakeMove(engineMove)
+		g.MakeMove(engineMove)
 		fmt.Println(printFunc())
 		// fmt.Printf("I think your moves are %v", pos.GetMoves(oppSide))
-		gameLoop(oppSide, playerSide, pos, printFunc)
+		gameLoop(oppSide, playerSide, g, printFunc)
 	}
 }
 
