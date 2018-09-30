@@ -88,16 +88,16 @@ func Calculate(p *Position, side Side, depth int, alpha, beta float64, node *Gam
 	for _, child := range node.children {
 		move := child.move
 		// Keep track of move details so we can roll back.
-		oldPiece := p.board[move.oRank][move.oFile].piece
-		capturedPiece := p.board[move.nRank][move.nFile].piece
+		oldPiece := p.board[move.oRank][move.oFile]
+		capturedPiece := p.board[move.nRank][move.nFile]
 
 		p.MakeMove(move)
 		child.eval = -Calculate(p, side.OppSide(), depth-1, -beta, -alpha, child)
 		bestSoFar = math.Max(bestSoFar, child.eval)
 
 		// Roll back move
-		p.board[move.oRank][move.oFile].piece = oldPiece
-		p.board[move.nRank][move.nFile].piece = capturedPiece
+		p.board[move.oRank][move.oFile] = oldPiece
+		p.board[move.nRank][move.nFile] = capturedPiece
 
 		alpha = math.Max(alpha, bestSoFar)
 		if alpha >= beta {
@@ -123,7 +123,7 @@ func Calculate(p *Position, side Side, depth int, alpha, beta float64, node *Gam
 func Think(g GameContext, side Side) Move {
 	// Get an initial move
 	strongestMove := thinkDepth(g, side, 1)
-	for i := 1; i < 7; i++ {
+	for i := 1; i < 3; i++ {
 		fmt.Printf("Thinking to depth %d\n", i)
 		strongestMove = thinkDepth(g, side, i)
 	}
@@ -152,8 +152,8 @@ func thinkDepth(g GameContext, side Side, depth int) Move {
 		move := child.move
 
 		// Keep track of move details so we can roll back.
-		oldPiece := p.board[move.oRank][move.oFile].piece
-		capturedPiece := p.board[move.nRank][move.nFile].piece
+		oldPiece := p.board[move.oRank][move.oFile]
+		capturedPiece := p.board[move.nRank][move.nFile]
 
 		p.MakeMove(move)
 		eval := -Calculate(&p, side.OppSide(), depth, -beta, -alpha, child)
@@ -165,8 +165,8 @@ func thinkDepth(g GameContext, side Side, depth int) Move {
 		alpha = math.Max(alpha, bestSoFar)
 
 		// Roll back move.
-		p.board[move.oRank][move.oFile].piece = oldPiece
-		p.board[move.nRank][move.nFile].piece = capturedPiece
+		p.board[move.oRank][move.oFile] = oldPiece
+		p.board[move.nRank][move.nFile] = capturedPiece
 	}
 	return bestMoveSoFar
 }

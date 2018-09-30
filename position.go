@@ -1,28 +1,34 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 )
 
 // Square represents a square in a chess position. Squares can have a piece placed on them.
 type Square struct {
-	piece GamePiece
+	file int
+	rank int
 }
 
 // Position represents a chess position representation.
 type Position struct {
-	board [][]Square
+	board               [][]GamePiece
+	canCastleLongWhite  bool
+	canCastleShortWhite bool
+	canCastleLongBlack  bool
+	canCastleShortBlack bool
 }
 
 // NewPosition creates and initializes a new Position with the starting arrangement of pieces.
 func NewPosition() *Position {
-	board := make([][]Square, 8, 8)
+	board := make([][]GamePiece, 8, 8)
 
 	for i := range board {
-		board[i] = make([]Square, 8, 8)
+		board[i] = make([]GamePiece, 8, 8)
 	}
 
-	pos := Position{board}
+	pos := Position{board, true, true, true, true}
 
 	pos.Reset()
 	return &pos
@@ -30,9 +36,9 @@ func NewPosition() *Position {
 
 // Copy makes a copy of a position
 func (p Position) Copy() *Position {
-	newPos := Position{make([][]Square, len(p.board))}
+	newPos := Position{make([][]GamePiece, len(p.board)), true, true, true, true}
 	for i := range newPos.board {
-		newPos.board[i] = make([]Square, len(p.board[i]))
+		newPos.board[i] = make([]GamePiece, len(p.board[i]))
 		copy(newPos.board[i], p.board[i])
 	}
 	return &newPos
@@ -46,34 +52,34 @@ func (p *Position) Reset() {
 			case r == 0:
 				switch {
 				case f == 0 || f == 7:
-					p.board[r][f].piece = GamePiece{Rook, White}
+					p.board[r][f] = GamePiece{Rook, White}
 				case f == 1 || f == 6:
-					p.board[r][f].piece = GamePiece{Knight, White}
+					p.board[r][f] = GamePiece{Knight, White}
 				case f == 2 || f == 5:
-					p.board[r][f].piece = GamePiece{Bishop, White}
+					p.board[r][f] = GamePiece{Bishop, White}
 				case f == 3:
-					p.board[r][f].piece = GamePiece{Queen, White}
+					p.board[r][f] = GamePiece{Queen, White}
 				case f == 4:
-					p.board[r][f].piece = GamePiece{King, White}
+					p.board[r][f] = GamePiece{King, White}
 				}
 			case r == 1:
-				p.board[r][f].piece = GamePiece{Pawn, White}
+				p.board[r][f] = GamePiece{Pawn, White}
 			case r == 2 || r == 3 || r == 4 || r == 5:
-				p.board[r][f].piece = GamePiece{None, White}
+				p.board[r][f] = GamePiece{None, White}
 			case r == 6:
-				p.board[r][f].piece = GamePiece{Pawn, Black}
+				p.board[r][f] = GamePiece{Pawn, Black}
 			case r == 7:
 				switch {
 				case f == 0 || f == 7:
-					p.board[r][f].piece = GamePiece{Rook, Black}
+					p.board[r][f] = GamePiece{Rook, Black}
 				case f == 1 || f == 6:
-					p.board[r][f].piece = GamePiece{Knight, Black}
+					p.board[r][f] = GamePiece{Knight, Black}
 				case f == 2 || f == 5:
-					p.board[r][f].piece = GamePiece{Bishop, Black}
+					p.board[r][f] = GamePiece{Bishop, Black}
 				case f == 3:
-					p.board[r][f].piece = GamePiece{Queen, Black}
+					p.board[r][f] = GamePiece{Queen, Black}
 				case f == 4:
-					p.board[r][f].piece = GamePiece{King, Black}
+					p.board[r][f] = GamePiece{King, Black}
 				}
 			}
 		}
@@ -86,7 +92,7 @@ func (p Position) String() string {
 	for r := len(p.board) - 1; r >= 0; r-- {
 		boardPrint += " " + strconv.Itoa(r+1) + " "
 		for f := range p.board[r] {
-			gamePiece := p.board[r][f].piece
+			gamePiece := p.board[r][f]
 			boardPrint += "| " + gamePiece.String() + " "
 			if f == 7 {
 				boardPrint += "|\n   ––––––––––––––––-----------------\n"
@@ -110,23 +116,32 @@ func (p Position) StringBlack() (result string) {
 func (p *Position) GetMoves(side Side) []Move {
 	moves := make([]Move, 0, 20)
 
+	// kingSquare := getKingSquare(p, side)
 	// Only pieces can make moves in chess, so we iterate through the board and check for pieces.
 	// If a piece is found, we then check for legal moves for that piece.
 	for r := range p.board {
 		for f := range p.board[r] {
-			if p.board[r][f].piece.color == side {
-				moves = append(moves, p.GetMovesAt(f, r)...)
+			if p.board[r][f].color == side {
+				moves = append(moves, p.GetMovesAt(f, r, side)...)
 			}
 
 		}
 	}
+	// Prune moves which lead to checks
+	// validMoves := make([]Move, 0, cap(moves))
+	// for _, move := range moves {
+	// if !causesCheck(p, move, side, kingSquare) {
+	// validMoves = append(validMoves, move)
+	// }
+	// }
+	// return validMoves
 	return moves
 }
 
 // GetMovesAt returns the set of moves that are possible for the piece located at file f and rank r
-func (p *Position) GetMovesAt(f, r int) []Move {
+func (p *Position) GetMovesAt(f, r int, side Side) []Move {
 	moves := make([]Move, 0, 20)
-	piece := p.board[r][f].piece
+	piece := p.board[r][f]
 	switch piece.piece {
 	case Pawn:
 		moves = append(moves, p.getPawnMoves(f, r, piece.color)...)
@@ -141,7 +156,35 @@ func (p *Position) GetMovesAt(f, r int) []Move {
 	case King:
 		moves = append(moves, p.getKingMoves(f, r, piece.color)...)
 	}
+
 	return moves
+}
+
+func causesCheck(p *Position, move Move, side Side, kingSquare Square) bool {
+	oldPiece := p.board[move.oRank][move.oFile]
+	capturedPiece := p.board[move.nRank][move.nFile]
+	toReturn := false
+
+	p.MakeMove(move)
+	if inCheck(*p, kingSquare.file, kingSquare.rank, side) {
+		toReturn = true
+	}
+
+	// Roll back move
+	p.board[move.oRank][move.oFile] = oldPiece
+	p.board[move.nRank][move.nFile] = capturedPiece
+	return toReturn
+}
+
+func getKingSquare(p *Position, side Side) Square {
+	for r := range p.board {
+		for f := range p.board[r] {
+			if p.board[r][f].piece == King && p.board[r][f].color == side {
+				return Square{f, r}
+			}
+		}
+	}
+	panic(fmt.Sprintf("getKingSquare in %v returned no square for side %v.", p, side))
 }
 
 // TODO account for en passant. Investigate if the engine knows how to move black pawns.
@@ -165,26 +208,26 @@ func (p *Position) getPawnMoves(f, r int, side Side) []Move {
 
 	// Possible forward moves
 	if r == 1 && side == White || r == 6 && side == Black {
-		if p.board[r+rIncr][f].piece.piece == None {
+		if p.board[r+rIncr][f].piece == None {
 			moves = append(moves, Move{f, r, f, r + rIncr, ""})
-			if p.board[r+rIncr*2][f].piece.piece == None {
+			if p.board[r+rIncr*2][f].piece == None {
 				moves = append(moves, Move{f, r, f, r + rIncr*2, ""})
 			}
 		}
 	} else if r > 1 && side == White || r < 6 && side == Black {
-		if p.board[r+rIncr][f].piece.piece == None {
+		if p.board[r+rIncr][f].piece == None {
 			moves = append(moves, Move{f, r, f, r + rIncr, ""})
 		}
 	}
 
 	// Possible captures
 	if f-1 >= 0 {
-		if p.board[r+rIncr][f-1].piece.piece != None && p.board[r+rIncr][f-1].piece.color != side {
+		if p.board[r+rIncr][f-1].piece != None && p.board[r+rIncr][f-1].color != side {
 			moves = append(moves, Move{f, r, f - 1, r + rIncr, ""})
 		}
 	}
 	if f+1 <= 7 {
-		if p.board[r+rIncr][f+1].piece.piece != None && p.board[r+rIncr][f+1].piece.color != side {
+		if p.board[r+rIncr][f+1].piece != None && p.board[r+rIncr][f+1].color != side {
 			moves = append(moves, Move{f, r, f + 1, r + rIncr, ""})
 		}
 	}
@@ -346,7 +389,6 @@ func (p *Position) getQueenMoves(f, r int, side Side) []Move {
 // Get possible king moves for a king located at file r and rank f of color side.
 func (p *Position) getKingMoves(f, r int, side Side) []Move {
 	// Look at adjacent squares
-	// TODO Evaluate checks
 	moves := make([]Move, 0, 8)
 	// Right
 	if canMove, _ := canMoveToSquare(*p, f+1, r, side); canMove {
@@ -381,7 +423,153 @@ func (p *Position) getKingMoves(f, r int, side Side) []Move {
 		moves = append(moves, Move{f, r, f + 1, r + 1, ""})
 	}
 
+	// TODO Castle
+
 	return moves
+}
+
+/* lookUp and other look functions look in a direction on the board from a starting square. When another piece is encountered, the function returns
+with the squares traversed and the collision piece. */
+func (p *Position) lookUp(f, r int) ([]Square, *GamePiece) {
+	squares := make([]Square, 0)
+	piece := GamePiece{None, White}
+	for i := r + 1; i <= 7; i++ {
+		squares = append(squares, Square{f, i})
+		if p.board[i][f].piece != None {
+			piece = p.board[i][f]
+			break
+		}
+	}
+	return squares, &piece
+}
+
+func (p *Position) lookUpRight(f, r int) ([]Square, *GamePiece) {
+	squares := make([]Square, 0)
+	piece := GamePiece{None, White}
+	for i, j := r+1, f+1; i < 8 && j < 8; i, j = i+1, j+1 {
+		squares = append(squares, Square{j, i})
+		if p.board[i][j].piece != None {
+			piece = p.board[i][j]
+			break
+		}
+	}
+	return squares, &piece
+}
+
+func (p *Position) lookRight(f, r int) ([]Square, *GamePiece) {
+	squares := make([]Square, 0)
+	piece := GamePiece{None, White}
+	for i := f + 1; i <= 7; i++ {
+		squares = append(squares, Square{i, r})
+		if p.board[r][i].piece != None {
+			piece = p.board[r][i]
+			break
+		}
+	}
+	return squares, &piece
+}
+
+func (p *Position) lookDownRight(f, r int) ([]Square, *GamePiece) {
+	squares := make([]Square, 0)
+	piece := GamePiece{None, White}
+	for i, j := r-1, f+1; i >= 0 && j < 8; i, j = i-1, j+1 {
+		squares = append(squares, Square{j, i})
+		if p.board[i][j].piece != None {
+			piece = p.board[i][j]
+			break
+		}
+	}
+	return squares, &piece
+}
+
+func (p *Position) lookDown(f, r int) ([]Square, *GamePiece) {
+	squares := make([]Square, 0)
+	piece := GamePiece{None, White}
+	for i := r - 1; i >= 0; i-- {
+		squares = append(squares, Square{f, i})
+		if p.board[i][f].piece != None {
+			piece = p.board[i][f]
+			break
+		}
+	}
+	return squares, &piece
+}
+
+func (p *Position) lookDownLeft(f, r int) ([]Square, *GamePiece) {
+	squares := make([]Square, 0)
+	piece := GamePiece{None, White}
+	for i, j := r-1, f-1; i >= 0 && j >= 0; i, j = i-1, j-1 {
+		squares = append(squares, Square{j, i})
+		if p.board[i][j].piece != None {
+			piece = p.board[i][j]
+			break
+		}
+	}
+	return squares, &piece
+}
+
+func (p *Position) lookLeft(f, r int) ([]Square, *GamePiece) {
+	squares := make([]Square, 0)
+	piece := GamePiece{None, White}
+	for i := f - 1; i >= 0; i-- {
+		squares = append(squares, Square{i, r})
+		if p.board[r][i].piece != None {
+			piece = p.board[r][i]
+			break
+		}
+	}
+	return squares, &piece
+}
+
+func (p *Position) lookUpLeft(f, r int) ([]Square, *GamePiece) {
+	squares := make([]Square, 0)
+	piece := GamePiece{None, White}
+	for i, j := r+1, f-1; i < 8 && j >= 0; i, j = i+1, j-1 {
+		squares = append(squares, Square{j, i})
+		if p.board[i][j].piece != None {
+			piece = p.board[i][j]
+			break
+		}
+	}
+	return squares, &piece
+}
+
+func (p *Position) lookL(f, r int) []Square {
+	squares := make([]Square, 0)
+
+	// Right L moves
+	if f+2 < 7 && r+1 < 7 {
+		squares = append(squares, Square{f + 2, r + 1})
+	}
+	if f+2 < 7 && r-1 >= 0 {
+		squares = append(squares, Square{f + 2, r - 1})
+	}
+
+	// Left L moves
+	if f-2 >= 0 && r+1 < 7 {
+		squares = append(squares, Square{f - 2, r + 1})
+	}
+	if f-2 >= 0 && r-1 >= 0 {
+		squares = append(squares, Square{f - 2, r - 1})
+	}
+
+	// Forward L moves
+	if f+1 < 7 && r+2 < 7 {
+		squares = append(squares, Square{f + 1, r + 2})
+	}
+	if f-1 >= 0 && r+2 < 7 {
+		squares = append(squares, Square{f - 1, r + 2})
+	}
+
+	// Backward L moves
+	if f+1 < 7 && r-2 >= 0 {
+		squares = append(squares, Square{f + 1, r - 2})
+	}
+	if f-1 >= 0 && r-2 >= 0 {
+		squares = append(squares, Square{f - 1, r - 2})
+	}
+
+	return squares
 }
 
 // canMoveToSquare evaluates if a piece of a specific color can occupy the square specified.
@@ -390,9 +578,9 @@ func canMoveToSquare(p Position, f, r int, side Side) (canMove, capture bool) {
 		return false, false
 	}
 
-	if p.board[r][f].piece.piece == None {
+	if p.board[r][f].piece == None {
 		return true, false
-	} else if p.board[r][f].piece.color == side {
+	} else if p.board[r][f].color == side {
 		return false, false
 	} else {
 		return true, true
@@ -401,8 +589,37 @@ func canMoveToSquare(p Position, f, r int, side Side) (canMove, capture bool) {
 
 // inCheck checks if the square at f, r is attacked by opponent's pieces.
 func inCheck(p Position, f, r int, side Side) bool {
+	// if _, piece := p.lookUp(f, r); piece.color == side.OppSide() && (piece.piece == Rook || piece.piece == Queen) {
+	// 	return true
+	// }
+	// if _, piece := p.lookUpRight(f, r); piece.color == side.OppSide() && (piece.piece == Bishop || piece.piece == Queen) {
+	// 	return true
+	// }
+	// if _, piece := p.lookRight(f, r); piece.color == side.OppSide() && (piece.piece == Rook || piece.piece == Queen) {
+	// 	return true
+	// }
+	// if _, piece := p.lookDownRight(f, r); piece.color == side.OppSide() && (piece.piece == Bishop || piece.piece == Queen) {
+	// 	return true
+	// }
+	// if _, piece := p.lookDown(f, r); piece.color == side.OppSide() && (piece.piece == Rook || piece.piece == Queen) {
+	// 	return true
+	// }
+	// if _, piece := p.lookDownLeft(f, r); piece.color == side.OppSide() && (piece.piece == Bishop || piece.piece == Queen) {
+	// 	return true
+	// }
+	// if _, piece := p.lookLeft(f, r); piece.color == side.OppSide() && (piece.piece == Rook || piece.piece == Queen) {
+	// 	return true
+	// }
+	// if _, piece := p.lookUpLeft(f, r); piece.color == side.OppSide() && (piece.piece == Bishop || piece.piece == Queen) {
+	// 	return true
+	// }
+
+	// for _, square := range p.lookL(f, r) {
+	// 	if p.board[square.rank][square.file].color == side.OppSide() && p.board[square.rank][square.file].piece == Knight {
+	// 		return true
+	// 	}
+	// }
 	return false
-	//TODO
 }
 
 // GetPieces returns an array of pieces for the side indicated in a position.
@@ -410,7 +627,7 @@ func (p *Position) GetPieces(side Side) []GamePiece {
 	pieces := make([]GamePiece, 0, 32)
 	for r := range p.board {
 		for f := range p.board[r] {
-			piece := p.board[r][f].piece
+			piece := p.board[r][f]
 			if piece.piece != None && piece.color == side {
 				pieces = append(pieces, piece)
 			}
@@ -435,7 +652,7 @@ func (p *Position) CentralControl(side Side) float64 {
 	count := 0.0
 	for r := 2; r < 5; r++ {
 		for f := 2; f < 5; f++ {
-			if p.board[r][f].piece.color == side {
+			if p.board[r][f].color == side {
 				count++
 			}
 		}
@@ -455,8 +672,8 @@ func (p *Position) MakeMove(move Move) bool {
 	// TODO handle promotion
 
 	// Make normal move
-	piece := p.board[or][of].piece
-	p.board[or][of].piece = GamePiece{None, White}
-	p.board[nr][nf].piece = piece
+	piece := p.board[or][of]
+	p.board[or][of] = GamePiece{None, White}
+	p.board[nr][nf] = piece
 	return true
 }
