@@ -240,51 +240,39 @@ func (p *Position) getRookMoves(f, r int, side Side) []Move {
 	moves := make([]Move, 0, 20)
 
 	// Look right
-	for i := f + 1; i <= 7; i++ {
-		if canMove, capture := canMoveToSquare(*p, i, r, side); canMove {
-			moves = append(moves, Move{f, r, i, r, ""})
-			if capture {
-				break
-			}
-		} else {
-			break
+	squares, piece := p.lookRight(f, r)
+	for i, s := range squares {
+		if i == len(squares)-1 && piece.piece != None && piece.color == side {
+			continue
 		}
+		moves = append(moves, Move{f, r, s.file, s.rank, ""})
 	}
 
 	// Look left
-	for i := f - 1; i >= 0; i-- {
-		if canMove, capture := canMoveToSquare(*p, i, r, side); canMove {
-			moves = append(moves, Move{f, r, i, r, ""})
-			if capture {
-				break
-			}
-		} else {
-			break
+	squares, piece = p.lookLeft(f, r)
+	for i, s := range squares {
+		if i == len(squares)-1 && piece.piece != None && piece.color == side {
+			continue
 		}
+		moves = append(moves, Move{f, r, s.file, s.rank, ""})
 	}
 
-	// Look forward
-	for i := r + 1; i <= 7; i++ {
-		if canMove, capture := canMoveToSquare(*p, f, i, side); canMove {
-			moves = append(moves, Move{f, r, f, i, ""})
-			if capture {
-				break
-			}
-		} else {
-			break
+	// Look up
+	squares, piece = p.lookUp(f, r)
+	for i, s := range squares {
+		if i == len(squares)-1 && piece.piece != None && piece.color == side {
+			continue
 		}
+		moves = append(moves, Move{f, r, s.file, s.rank, ""})
 	}
 
-	// Look backward
-	for i := r - 1; i >= 0; i-- {
-		if canMove, capture := canMoveToSquare(*p, f, i, side); canMove {
-			moves = append(moves, Move{f, r, f, i, ""})
-			if capture {
-				break
-			}
-		} else {
-			break
+	// Look down
+	squares, piece = p.lookDown(f, r)
+	for i, s := range squares {
+		if i == len(squares)-1 && piece.piece != None && piece.color == side {
+			continue
 		}
+		moves = append(moves, Move{f, r, s.file, s.rank, ""})
 	}
 	return moves
 }
@@ -293,49 +281,40 @@ func (p *Position) getRookMoves(f, r int, side Side) []Move {
 func (p *Position) getBishopMoves(f, r int, side Side) []Move {
 	moves := make([]Move, 0, 20)
 
-	// Look diagonally forward-right
-	for i, j := r+1, f+1; i < 8 && j < 8; i, j = i+1, j+1 {
-		if canMove, capture := canMoveToSquare(*p, j, i, side); canMove {
-			moves = append(moves, Move{f, r, j, i, ""})
-			if capture {
-				break
-			}
-		} else {
-			break
+	// Look up right
+	squares, piece := p.lookUpRight(f, r)
+	for i, s := range squares {
+		if i == len(squares)-1 && piece.piece != None && piece.color == side {
+			continue
 		}
+		moves = append(moves, Move{f, r, s.file, s.rank, ""})
 	}
-	// Look diagonally forward-left
-	for i, j := r+1, f-1; i < 8 && j >= 0; i, j = i+1, j-1 {
-		if canMove, capture := canMoveToSquare(*p, j, i, side); canMove {
-			moves = append(moves, Move{f, r, j, i, ""})
-			if capture {
-				break
-			}
-		} else {
-			break
+
+	// Look up right
+	squares, piece = p.lookUpLeft(f, r)
+	for i, s := range squares {
+		if i == len(squares)-1 && piece.piece != None && piece.color == side {
+			continue
 		}
+		moves = append(moves, Move{f, r, s.file, s.rank, ""})
 	}
-	// Look diagonally backward-right
-	for i, j := r-1, f+1; i >= 0 && j < 8; i, j = i-1, j+1 {
-		if canMove, capture := canMoveToSquare(*p, j, i, side); canMove {
-			moves = append(moves, Move{f, r, j, i, ""})
-			if capture {
-				break
-			}
-		} else {
-			break
+
+	// Look down-right
+	squares, piece = p.lookDownRight(f, r)
+	for i, s := range squares {
+		if i == len(squares)-1 && piece.piece != None && piece.color == side {
+			continue
 		}
+		moves = append(moves, Move{f, r, s.file, s.rank, ""})
 	}
-	// Look diagonally backward-left
-	for i, j := r-1, f-1; i >= 0 && j >= 0; i, j = i-1, j-1 {
-		if canMove, capture := canMoveToSquare(*p, j, i, side); canMove {
-			moves = append(moves, Move{f, r, j, i, ""})
-			if capture {
-				break
-			}
-		} else {
-			break
+
+	// Look down-left
+	squares, piece = p.lookDownLeft(f, r)
+	for i, s := range squares {
+		if i == len(squares)-1 && piece.piece != None && piece.color == side {
+			continue
 		}
+		moves = append(moves, Move{f, r, s.file, s.rank, ""})
 	}
 	return moves
 }
