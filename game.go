@@ -14,19 +14,12 @@ func StartUserSession() {
 
 	game := *NewGame()
 	side := promptColor()
-	var printFunc func() string
-	if side == White {
-		printFunc = game.position.String
-	} else {
-		// TODO Switch back to pos.StringBlack
-		printFunc = game.position.String
-	}
 
-	fmt.Println(printFunc())
-	gameLoop(White, side, game, printFunc)
+	fmt.Println(game.position)
+	gameLoop(White, side, game)
 }
 
-func gameLoop(side Side, playerSide Side, g GameContext, printFunc func() string) {
+func gameLoop(side Side, playerSide Side, g GameContext) {
 	var oppSide = side.OppSide()
 
 	if side == playerSide {
@@ -35,16 +28,17 @@ func gameLoop(side Side, playerSide Side, g GameContext, printFunc func() string
 			fmt.Printf("Something went wrong processing move: %+v\n", move)
 			return
 		}
-		fmt.Println(printFunc())
-		gameLoop(oppSide, playerSide, g, printFunc)
+		fmt.Println(g.position)
+		gameLoop(oppSide, playerSide, g)
 	} else {
+		fmt.Printf("I think my moves are %v", g.position.GetMoves(side))
 		fmt.Println("Engine is thinking...")
 		engineMove := Think(g, side)
 		fmt.Printf("Engine Move: %v\n", engineMove)
 		g.MakeMove(engineMove)
-		fmt.Println(printFunc())
-		// fmt.Printf("I think your moves are %v", pos.GetMoves(oppSide))
-		gameLoop(oppSide, playerSide, g, printFunc)
+		fmt.Println(g.position)
+		fmt.Printf("I think your moves are %v", g.position.GetMoves(oppSide))
+		gameLoop(oppSide, playerSide, g)
 	}
 }
 

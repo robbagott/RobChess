@@ -103,15 +103,6 @@ func (p Position) String() string {
 	return boardPrint
 }
 
-// StringBlack prints the board from black perspective.
-// TODO Currently breaks due to color formatting.
-func (p Position) StringBlack() (result string) {
-	for _, v := range p.String() {
-		result = string(v) + result
-	}
-	return
-}
-
 // GetMoves returns the set of moves that are possible for the side indicated.
 func (p *Position) GetMoves(side Side) []Move {
 	moves := make([]Move, 0, 20)
@@ -322,37 +313,11 @@ func (p *Position) getBishopMoves(f, r int, side Side) []Move {
 // Get possible queen moves for a queen located at file r and rank f of color side.
 func (p *Position) getKnightMoves(f, r int, side Side) []Move {
 	moves := make([]Move, 0, 8)
-
-	// Right L moves
-	if canMove, _ := canMoveToSquare(*p, f+2, r+1, side); canMove {
-		moves = append(moves, Move{f, r, f + 2, r + 1, ""})
-	}
-	if canMove, _ := canMoveToSquare(*p, f+2, r-1, side); canMove {
-		moves = append(moves, Move{f, r, f + 2, r - 1, ""})
-	}
-
-	// Left L moves
-	if canMove, _ := canMoveToSquare(*p, f-2, r+1, side); canMove {
-		moves = append(moves, Move{f, r, f - 2, r + 1, ""})
-	}
-	if canMove, _ := canMoveToSquare(*p, f-2, r-1, side); canMove {
-		moves = append(moves, Move{f, r, f - 2, r - 1, ""})
-	}
-
-	// Forward L moves
-	if canMove, _ := canMoveToSquare(*p, f+1, r+2, side); canMove {
-		moves = append(moves, Move{f, r, f + 1, r + 2, ""})
-	}
-	if canMove, _ := canMoveToSquare(*p, f-1, r+2, side); canMove {
-		moves = append(moves, Move{f, r, f - 1, r + 2, ""})
-	}
-
-	// Backward L moves
-	if canMove, _ := canMoveToSquare(*p, f+1, r-2, side); canMove {
-		moves = append(moves, Move{f, r, f + 1, r - 2, ""})
-	}
-	if canMove, _ := canMoveToSquare(*p, f-1, r-2, side); canMove {
-		moves = append(moves, Move{f, r, f - 1, r - 2, ""})
+	squares := p.lookL(f, r)
+	for _, square := range squares {
+		if canMove, _ := canMoveToSquare(*p, square.file, square.rank, side); canMove {
+			moves = append(moves, Move{f, r, square.file, square.rank, ""})
+		}
 	}
 	return moves
 }
@@ -412,7 +377,7 @@ with the squares traversed and the collision piece. */
 func (p *Position) lookUp(f, r int) ([]Square, *GamePiece) {
 	squares := make([]Square, 0)
 	piece := GamePiece{None, White}
-	for i := r + 1; i <= 7; i++ {
+	for i := r + 1; i < 8; i++ {
 		squares = append(squares, Square{f, i})
 		if p.board[i][f].piece != None {
 			piece = p.board[i][f]
@@ -438,7 +403,7 @@ func (p *Position) lookUpRight(f, r int) ([]Square, *GamePiece) {
 func (p *Position) lookRight(f, r int) ([]Square, *GamePiece) {
 	squares := make([]Square, 0)
 	piece := GamePiece{None, White}
-	for i := f + 1; i <= 7; i++ {
+	for i := f + 1; i < 8; i++ {
 		squares = append(squares, Square{i, r})
 		if p.board[r][i].piece != None {
 			piece = p.board[r][i]
@@ -517,15 +482,15 @@ func (p *Position) lookL(f, r int) []Square {
 	squares := make([]Square, 0)
 
 	// Right L moves
-	if f+2 < 7 && r+1 < 7 {
+	if f+2 < 8 && r+1 < 8 {
 		squares = append(squares, Square{f + 2, r + 1})
 	}
-	if f+2 < 7 && r-1 >= 0 {
+	if f+2 < 8 && r-1 >= 0 {
 		squares = append(squares, Square{f + 2, r - 1})
 	}
 
 	// Left L moves
-	if f-2 >= 0 && r+1 < 7 {
+	if f-2 >= 0 && r+1 < 8 {
 		squares = append(squares, Square{f - 2, r + 1})
 	}
 	if f-2 >= 0 && r-1 >= 0 {
@@ -533,15 +498,15 @@ func (p *Position) lookL(f, r int) []Square {
 	}
 
 	// Forward L moves
-	if f+1 < 7 && r+2 < 7 {
+	if f+1 < 8 && r+2 < 8 {
 		squares = append(squares, Square{f + 1, r + 2})
 	}
-	if f-1 >= 0 && r+2 < 7 {
+	if f-1 >= 0 && r+2 < 8 {
 		squares = append(squares, Square{f - 1, r + 2})
 	}
 
 	// Backward L moves
-	if f+1 < 7 && r-2 >= 0 {
+	if f+1 < 8 && r-2 >= 0 {
 		squares = append(squares, Square{f + 1, r - 2})
 	}
 	if f-1 >= 0 && r-2 >= 0 {
