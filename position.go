@@ -107,9 +107,10 @@ func (p Position) String() string {
 func (p *Position) GetMoves(side Side) []Move {
 	moves := make([]Move, 0, 20)
 
-	// kingSquare := getKingSquare(p, side)
-	// Only pieces can make moves in chess, so we iterate through the board and check for pieces.
-	// If a piece is found, we then check for legal moves for that piece.
+	kingSquare := getKingSquare(p, side)
+
+	/* Only pieces can make moves in chess, so we iterate through the board and check for pieces.
+	If a piece is found, we then check for legal moves for that piece. */
 	for r := range p.board {
 		for f := range p.board[r] {
 			if p.board[r][f].color == side {
@@ -118,15 +119,15 @@ func (p *Position) GetMoves(side Side) []Move {
 
 		}
 	}
+
 	// Prune moves which lead to checks
-	// validMoves := make([]Move, 0, cap(moves))
-	// for _, move := range moves {
-	// if !causesCheck(p, move, side, kingSquare) {
-	// validMoves = append(validMoves, move)
-	// }
-	// }
-	// return validMoves
-	return moves
+	validMoves := make([]Move, 0, cap(moves))
+	for _, move := range moves {
+		if !causesCheck(p, move, side, kingSquare) {
+			validMoves = append(validMoves, move)
+		}
+	}
+	return validMoves
 }
 
 // GetMovesAt returns the set of moves that are possible for the piece located at file f and rank r
@@ -533,36 +534,36 @@ func canMoveToSquare(p Position, f, r int, side Side) (canMove, capture bool) {
 
 // inCheck checks if the square at f, r is attacked by opponent's pieces.
 func inCheck(p Position, f, r int, side Side) bool {
-	// if _, piece := p.lookUp(f, r); piece.color == side.OppSide() && (piece.piece == Rook || piece.piece == Queen) {
-	// 	return true
-	// }
-	// if _, piece := p.lookUpRight(f, r); piece.color == side.OppSide() && (piece.piece == Bishop || piece.piece == Queen) {
-	// 	return true
-	// }
-	// if _, piece := p.lookRight(f, r); piece.color == side.OppSide() && (piece.piece == Rook || piece.piece == Queen) {
-	// 	return true
-	// }
-	// if _, piece := p.lookDownRight(f, r); piece.color == side.OppSide() && (piece.piece == Bishop || piece.piece == Queen) {
-	// 	return true
-	// }
-	// if _, piece := p.lookDown(f, r); piece.color == side.OppSide() && (piece.piece == Rook || piece.piece == Queen) {
-	// 	return true
-	// }
-	// if _, piece := p.lookDownLeft(f, r); piece.color == side.OppSide() && (piece.piece == Bishop || piece.piece == Queen) {
-	// 	return true
-	// }
-	// if _, piece := p.lookLeft(f, r); piece.color == side.OppSide() && (piece.piece == Rook || piece.piece == Queen) {
-	// 	return true
-	// }
-	// if _, piece := p.lookUpLeft(f, r); piece.color == side.OppSide() && (piece.piece == Bishop || piece.piece == Queen) {
-	// 	return true
-	// }
+	if _, piece := p.lookUp(f, r); piece.color == side.OppSide() && (piece.piece == Rook || piece.piece == Queen) {
+		return true
+	}
+	if _, piece := p.lookUpRight(f, r); piece.color == side.OppSide() && (piece.piece == Bishop || piece.piece == Queen) {
+		return true
+	}
+	if _, piece := p.lookRight(f, r); piece.color == side.OppSide() && (piece.piece == Rook || piece.piece == Queen) {
+		return true
+	}
+	if _, piece := p.lookDownRight(f, r); piece.color == side.OppSide() && (piece.piece == Bishop || piece.piece == Queen) {
+		return true
+	}
+	if _, piece := p.lookDown(f, r); piece.color == side.OppSide() && (piece.piece == Rook || piece.piece == Queen) {
+		return true
+	}
+	if _, piece := p.lookDownLeft(f, r); piece.color == side.OppSide() && (piece.piece == Bishop || piece.piece == Queen) {
+		return true
+	}
+	if _, piece := p.lookLeft(f, r); piece.color == side.OppSide() && (piece.piece == Rook || piece.piece == Queen) {
+		return true
+	}
+	if _, piece := p.lookUpLeft(f, r); piece.color == side.OppSide() && (piece.piece == Bishop || piece.piece == Queen) {
+		return true
+	}
 
-	// for _, square := range p.lookL(f, r) {
-	// 	if p.board[square.rank][square.file].color == side.OppSide() && p.board[square.rank][square.file].piece == Knight {
-	// 		return true
-	// 	}
-	// }
+	for _, square := range p.lookL(f, r) {
+		if p.board[square.rank][square.file].color == side.OppSide() && p.board[square.rank][square.file].piece == Knight {
+			return true
+		}
+	}
 	return false
 }
 
