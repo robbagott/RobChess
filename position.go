@@ -107,8 +107,6 @@ func (p Position) String() string {
 func (p *Position) GetMoves(side Side) []Move {
 	moves := make([]Move, 0, 20)
 
-	kingSquare := getKingSquare(p, side)
-
 	/* Only pieces can make moves in chess, so we iterate through the board and check for pieces.
 	If a piece is found, we then check for legal moves for that piece. */
 	for r := range p.board {
@@ -123,10 +121,11 @@ func (p *Position) GetMoves(side Side) []Move {
 	// Prune moves which lead to checks
 	validMoves := make([]Move, 0, cap(moves))
 	for _, move := range moves {
-		if !causesCheck(p, move, side, kingSquare) {
+		if !causesCheck(p, move, side) {
 			validMoves = append(validMoves, move)
 		}
 	}
+
 	return validMoves
 }
 
@@ -152,12 +151,13 @@ func (p *Position) GetMovesAt(f, r int, side Side) []Move {
 	return moves
 }
 
-func causesCheck(p *Position, move Move, side Side, kingSquare Square) bool {
+func causesCheck(p *Position, move Move, side Side) bool {
 	oldPiece := p.board[move.oRank][move.oFile]
 	capturedPiece := p.board[move.nRank][move.nFile]
 	toReturn := false
 
 	p.MakeMove(move)
+	kingSquare := getKingSquare(p, side)
 	if inCheck(*p, kingSquare.file, kingSquare.rank, side) {
 		toReturn = true
 	}

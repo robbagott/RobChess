@@ -39,6 +39,7 @@ func (g *GameContext) MakeMove(move Move) bool {
 		for _, child := range g.gameTree.children {
 			if child.move == move {
 				g.gameTree = child
+				break
 			}
 		}
 		return true
@@ -87,6 +88,7 @@ func Calculate(p *Position, side Side, depth int, alpha, beta float64, node *Gam
 	bestSoFar := math.Inf(-1)
 	for _, child := range node.children {
 		move := child.move
+
 		// Keep track of move details so we can roll back.
 		oldPiece := p.board[move.oRank][move.oFile]
 		capturedPiece := p.board[move.nRank][move.nFile]
@@ -117,13 +119,17 @@ func Calculate(p *Position, side Side, depth int, alpha, beta float64, node *Gam
 	// From possible moves, choose optimal move. Return the optimal move with its evaluation.
 	node.children = sortMoves(node.children)
 	return bestSoFar
+	// The problem isn't sorting.
+	// The problem isn't making moves in the game context.
+	// Somehow the originally calculated getMoves for the position isn't the same as the newly calculated moves for the same position.
+	// This could somehow have to do with *visualizing* the board wrong when the engine is thinking multiple ply in the future.
 }
 
 // Think finds the best move according to the evaluation function.
 func Think(g GameContext, side Side) Move {
 	// Get an initial move
 	strongestMove := thinkDepth(g, side, 1)
-	for i := 1; i < 3; i++ {
+	for i := 2; i < 3; i++ {
 		fmt.Printf("Thinking to depth %d\n", i)
 		strongestMove = thinkDepth(g, side, i)
 	}
@@ -142,6 +148,12 @@ func thinkDepth(g GameContext, side Side, depth int) Move {
 			g.gameTree.children = append(g.gameTree.children, &GameTree{g.gameTree, make([]*GameTree, 0), move, 0})
 		}
 	}
+
+	startMoves := make([]Move, 0)
+	for _, child := range g.gameTree.children {
+		startMoves = append(startMoves, child.move)
+	}
+	fmt.Printf("thinkDepth start: I think my moves are %v\n", startMoves)
 
 	// Calculate possible moves
 	alpha := math.Inf(-1)
@@ -168,6 +180,7 @@ func thinkDepth(g GameContext, side Side, depth int) Move {
 		p.board[move.oRank][move.oFile] = oldPiece
 		p.board[move.nRank][move.nFile] = capturedPiece
 	}
+
 	return bestMoveSoFar
 }
 

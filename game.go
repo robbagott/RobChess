@@ -31,13 +31,13 @@ func gameLoop(side Side, playerSide Side, g GameContext) {
 		fmt.Println(g.position)
 		gameLoop(oppSide, playerSide, g)
 	} else {
-		fmt.Printf("I think my moves are %v", g.position.GetMoves(side))
-		fmt.Println("Engine is thinking...")
+		fmt.Printf("I think my moves are %v\n", g.position.GetMoves(side))
 		engineMove := Think(g, side)
 		fmt.Printf("Engine Move: %v\n", engineMove)
 		g.MakeMove(engineMove)
+		fmt.Printf("Moves so far: %v\n", g.moves)
 		fmt.Println(g.position)
-		fmt.Printf("I think your moves are %v", g.position.GetMoves(oppSide))
+		fmt.Printf("I think your moves are %v\n", g.position.GetMoves(oppSide))
 		gameLoop(oppSide, playerSide, g)
 	}
 }
@@ -126,5 +126,9 @@ func NewMove(oFile, oRank, nFile, nRank int, promoPiece string) (Move, bool) {
 }
 
 func (m Move) String() string {
-	return fmt.Sprintf("Move: %d%d %d%d", m.oFile, m.oRank, m.nFile, m.nRank)
+	oFile := string(m.oFile + 48 + 48 + 1)
+	oRank := string(m.oRank + 48 + 1)
+	nFile := string(m.nFile + 48 + 48 + 1)
+	nRank := string(m.nRank + 48 + 1)
+	return oFile + oRank + nFile + nRank + m.promoPiece
 }
